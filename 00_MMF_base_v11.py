@@ -1,10 +1,8 @@
-"""Based on 00_MMF_base_v9
-Needed to fix the missing columns - not being printed inside the movie frame
-Also, the money columns need to be rounded tidily. These have been fixed
-using the pandas.set_option methods
-For testing purposes, added an option asking user if they want to print
-all columns
-Change payment method in main routine to while loop (to prevent invalid choice)
+"""Based on 00_MMF_base_v10
+Gives the user the option to print all columns or only the most relevant:
+Name, Ticket cost, Snack cost, Sub Total, Surcharge, Total Cost
+Creates new variable name 'Snack cost' - on line 336
+and then included it in the modified print statement - on line 357
 """
 
 # Import Statements
@@ -335,6 +333,8 @@ movie_frame["Surcharge"] = \
 
 movie_frame["Total"] = movie_frame["Sub Total"] + movie_frame["Surcharge"]
 
+movie_frame["Snack Cost"] = movie_frame["Sub Total"] - movie_frame["Ticket"]
+
 # Shorten column names
 movie_frame = movie_frame.rename(columns={"Orange Juice": "OJ",
                                           "Pita Chips": "Chips",
@@ -354,7 +354,8 @@ print_all = input("Print all columns? (Y for yes) :").upper()
 if print_all == "Y":
     print(movie_frame)
 else:
-    print(movie_frame[["Ticket", "Sub Total", "Surcharge", "Total"]])
+    print(movie_frame[["Ticket", "Snack Cost", "Sub Total", "Surcharge",
+                       "Total"]])
 
 print()
 

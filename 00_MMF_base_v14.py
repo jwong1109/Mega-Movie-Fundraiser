@@ -1,10 +1,9 @@
-"""Based on 00_MMF_base_v9
-Needed to fix the missing columns - not being printed inside the movie frame
-Also, the money columns need to be rounded tidily. These have been fixed
-using the pandas.set_option methods
-For testing purposes, added an option asking user if they want to print
-all columns
-Change payment method in main routine to while loop (to prevent invalid choice)
+"""Based on 00_MMF_base_v13
+Move the ticket counting routine into its own function - so that it can be
+called each time a ticket is sold as well as at the end of the summary print.
+Format currency correctly using a function (just before the main routine)
+and, just above the frames, rearrange the snack, ticket and total profit
+figures using the currency function
 """
 
 # Import Statements
@@ -50,54 +49,38 @@ def collate_order():
     # Valid snacks holds list of all snacks. Each item is itself a list with
     # all the acceptable input options for each snack - full name, initials and
     # abbreviations, as well as reference number
-    valid_snacks = [["popcorn", "p", "corn", "(1"], ["m&ms", "mms", "m",
-                                                     "mm", "(2"],
+    valid_snacks = [["popcorn", "p", "pop", "corn", "(1"],
+                    ["m&ms", "mms", "m", "mm", "(2"],
                     ["pita chips", "chips", "pc", "pita", "c", "(3"],
-                    ["water", "w", "(4"], ["orange juice", "oj", "(5"],
+                    ["water", "h20", "w", "(4"],
+                    ["orange juice", "o", "oj", "juice", "(5"],
                     ["x", "exit", "(6"]]
 
     # Valid options for yes/no questions
     valid_yes_no_responses = ["y", "yes", "n", "no"]
 
     # The snack_order list records the complete order for a single user
-    snack_order = []
+    snacks_order = []
     # Maximum number of any snack item which can be ordered
     max_number_of_snacks = 4
-    # Assumption that every user will want to order snacks
-    getting_snacks = True
-    while getting_snacks:
-        snacks_required = ""
-        while snacks_required != "N" and snacks_required != "Y":
-            # Response is passed to the generic string checking function with
-            # the list of valid yes/no responses as parameters
-            check_snacks = input("Do you want snacks? (Y/N): ").lower()
-            snacks_required = get_choice(check_snacks, valid_yes_no_responses)
 
-        if snacks_required == "N":  # but if they don't want any snacks
-            getting_snacks = False  # break the while loop
-            break
+    option = ""
+    while option != "X":
+        snack = input("What snack do you want - qty then item"
+                      "\n e.g. '2 popcorn' OR - 'x' to stop ordering: ").lower()
+        snack = split_order(snack)
+        quantity = snack[0]
 
+        if quantity > max_number_of_snacks:
+            print("Sorry, the maximum number you can order is 4")
         else:
-            # Otherwise, for each snack, the generic string checker is called
-            # with the 'ask_for_snacks' question and the list of valid snacks
-            # as parameters
-            option = ""
-            while option != "X":
-                snack = input("What snack do you want - 'x' to stop "
-                              "ordering: ").lower()
-                snack = split_order(snack)
-                quantity = snack[0]
-                if quantity > max_number_of_snacks:
-                    snacks = None
-                    print("Sorry, the maximum number you can order is 4")
-                else:
-                    snack = snack[1]
-                    option = get_choice(snack, valid_snacks)
-                    if option == "X":
-                        getting_snacks = False
-                    elif option is not None:  # Filters out invalid choices
-                        snack_order.append([quantity, option])
-    return snack_order
+            snack = snack[1]
+            option = get_choice(snack, valid_snacks)
+            if option == "X":
+                break
+            elif option is not None:  # Filters out invalid choices
+                snacks_order.append([quantity, option])
+    return snacks_order
 
 
 # Calculate the ticket price (based on given age)
@@ -152,15 +135,15 @@ def check_max_tickets(maximum, sold):
 
 
 def check_valid_age(minimum, maximum):
-    age = number_checker(f"Please enter {name}'s age: ")
-    if age < minimum:
+    valid_age = number_checker(f"Please enter {name}'s age: ")
+    if valid_age < minimum:
         print(f"Sorry, {name} is too young for this movie")
         return None
     else:
-        while not age <= maximum:  # Age must be between 12 and 110
-            age = number_checker(f"\nAt {age} {name} is very old. "
+        while not valid_age <= maximum:  # Age must be between 12 and 110
+            valid_age = number_checker(f"\nAt {valid_age} {name} is very old. "
                                  f"Please re-enter {name}'s age: ")
-        return age
+        return valid_age
 
 
 def check_valid_payment_method():
@@ -170,6 +153,28 @@ def check_valid_payment_method():
                             ["cash", "ca", "money", "notes", "coins", "c", "3"]]
     payment_method = get_choice(ask_payment_method, valid_payment_method)
     return payment_method
+
+def ticket_counting(tickets_sold, maximum):
+        # Calculate total sales and profit
+    if ticket_count < MAX_TICKETS:
+        if ticket_count > 1:  # Making sure it reads OK when only one ticket sold
+            print(f"\n{ticket_count} tickets have now been sold")
+        else:
+            print("1 ticket has now been sold")
+        if MAX_TICKETS - ticket_count > 1:
+            print(f"{MAX_TICKETS - ticket_count} tickets are still available")
+        else:
+            print("1 ticket is still available\n")  # Making sure it reads OK when
+            # only one ticket left
+    else:
+        print("\n!!!!!!!! All the available tickets have now been sold !!!!!!!!")
+        print("*" * 60)
+
+
+# Currency formatting function
+def currency(number):
+    return f"${number:,.2f}"
+
 
 # ******** Main Routine ********
 
@@ -190,6 +195,19 @@ snack_lists = [popcorn, mms, pita_chips, water, orange_juice]
 # Store surcharge multiplier
 surcharge_mult_list = []
 
+# Lists to store summary data
+# Heading order matches the lists in the 'snacks_lists' master list above
+summary_headings = ["Popcorn", "M&Ms", "Pita Chips", "Water", "Orange Juice",
+                    "Snack Profit", "Ticket Profit", "Total Profit"]
+
+# Empty list to hold the data for above summary
+summary_data = []
+
+# Dictionary to hold summary information
+summary_data_dict = {
+    "Item": summary_headings,
+    "Amount": summary_data
+}
 
 # Data Frame Dictionary
 movie_data_dict = {
@@ -211,7 +229,7 @@ price_dict = {
     "M&Ms": 3,
     "Orange Juice": 3.25
 }
-
+SNACK_PROFIT_MARGIN = .2
 SURCHARGE_RATE = .05
 MINIMUM_AGE = 12
 MAXIMUM_AGE = 110
@@ -219,7 +237,7 @@ MAX_TICKETS = 5
 TICKET_COST_PRICE = 5.00
 name = ""
 ticket_count = 0
-profit = 0
+ticket_profit = 0
 surcharge = 0
 
 
@@ -250,11 +268,13 @@ while name != "X" and ticket_count < MAX_TICKETS:
         # Calculate ticket price
         ticket_price = calculate_ticket_price(age)
         print(f"For {name}, the price is ${ticket_price:,.2f}")
-        profit += (ticket_price - TICKET_COST_PRICE)
 
         # Add name and ticket price to lists
         all_names.append(name)
         all_tickets.append(ticket_price)
+
+        # Calculate ticket profit and add to running total
+        ticket_profit += (ticket_price - TICKET_COST_PRICE)
 
         # Get snacks
         snack_order = collate_order()
@@ -285,32 +305,21 @@ while name != "X" and ticket_count < MAX_TICKETS:
             print("No snacks were ordered")
         # Ask for payment method (an apply surcharge if required)
         payment_method = check_valid_payment_method()
-        if not payment_method:
-            continue
+        while not payment_method:
+            payment_method = check_valid_payment_method()
 
-        elif payment_method == "Credit Card":
+        if payment_method == "Credit Card":
             surcharge_multiplier = SURCHARGE_RATE
 
         else:
             surcharge_multiplier = 0
 
         surcharge_mult_list.append(surcharge_multiplier)
+
+        ticket_counting(ticket_count, MAX_TICKETS)
     # End of tickets/snacks/payment loop
 
-# Calculate total sales and profit
-if ticket_count < MAX_TICKETS:
-    if ticket_count > 1:  # Making sure it reads OK when only one ticket sold
-        print(f"\n{ticket_count} tickets have now been sold")
-    else:
-        print("1 ticket has now been sold")
-    if MAX_TICKETS - ticket_count > 1:
-        print(f"{MAX_TICKETS - ticket_count} tickets are still available")
-    else:
-        print("1 ticket is still available\n")  # Making sure it reads OK when
-        # only one ticket left
-else:
-    print("\n!!!!!!!! All the available tickets have now been sold !!!!!!!!")
-    print("*" * 60)
+
 
 # Print details
 print()
@@ -320,15 +329,15 @@ movie_frame = pandas.DataFrame(movie_data_dict)
 movie_frame = movie_frame.set_index("Name")  # Changes the index to reference
 # the names rather than an actual index number
 
-# Create column called 'Sub Total'
-# contains price for ticket and snacks
-movie_frame["Sub Total"] = \
-    movie_frame["Ticket"] + \
+# Calculate the collective price of snacks ordered
+movie_frame["Snack Cost"] = \
     movie_frame["Popcorn"] * price_dict["Popcorn"] + \
     movie_frame["Water"] * price_dict["Water"] + \
     movie_frame["Pita Chips"] * price_dict["Pita Chips"] + \
     movie_frame["M&Ms"] * price_dict["M&Ms"] + \
     movie_frame["Orange Juice"] * price_dict["Orange Juice"]
+
+movie_frame["Sub Total"] = movie_frame["Snack Cost"] + movie_frame["Ticket"]
 
 movie_frame["Surcharge"] = \
     movie_frame["Sub Total"] * movie_frame["Surcharge Multiplier"]
@@ -340,6 +349,31 @@ movie_frame = movie_frame.rename(columns={"Orange Juice": "OJ",
                                           "Pita Chips": "Chips",
                                           "Surcharge Multiplier": "SM"})
 
+# Set up summary data frame
+# Populate snack items from the master snack_lists
+for item in snack_lists:
+    # Sum items in each value list
+    summary_data.append(sum(item))
+
+# Get snack profit
+# Get snack total from panda
+snack_total = movie_frame["Snack Cost"].sum()
+snack_profit = snack_total * SNACK_PROFIT_MARGIN
+
+
+# Work out total profit and add to list
+total_profit = snack_profit + ticket_profit
+# Format profit figures and add to summary list
+currency_amounts = [snack_profit, ticket_profit, total_profit]
+for amount in currency_amounts:
+    amount = currency(amount)
+    summary_data.append(amount)
+
+# Creates the summary frame
+summary_frame = pandas.DataFrame(summary_data_dict)
+summary_frame = summary_frame.set_index("Item")
+
+
 # Force all columns to be printed
 pandas.set_option("display.max_columns", None)
 
@@ -347,18 +381,24 @@ pandas.set_option("display.max_columns", None)
 pandas.set_option("display.precision", 2)
 
 print(movie_frame)
-
-# For testing purposes, ask user if they want to see all columns
-# If not, just print Ticket, Sub Total, Surcharge, and Total columns
-print_all = input("Print all columns? (Y for yes) :").upper()
-if print_all == "Y":
-    print(movie_frame)
-else:
-    print(movie_frame[["Ticket", "Sub Total", "Surcharge", "Total"]])
-
 print()
 
-# Calculate ticket profit
-print(f"Ticket profit is ${profit:.2f}")
+# Printing the abbreviated table
+print()
+print("*** Ticket/Snack Information ***")
+# Refers to an export file - functionality yet to be developed
+print("Note: for full details please see the excel file called zzz")
+print()
+print(movie_frame[["Ticket", "Snack Cost", "Sub Total", "Surcharge", "Total"]])
+print()
+
+# Printing the summary frame
+print("*** Snack/Profit Summary ***")
+print()
+print(summary_frame)
+
+# Remaining tickets
+ticket_counting(ticket_count, MAX_TICKETS)
+
 
 # Output data to text file
