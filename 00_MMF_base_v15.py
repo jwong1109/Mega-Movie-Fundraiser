@@ -1,5 +1,6 @@
 """Based on 00_MMF_base_v14
-
+Include the export functionality for csv files
+Format currency values so they have dollar signs
 """
 
 # Import Statements

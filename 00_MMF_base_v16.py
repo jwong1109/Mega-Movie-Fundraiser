@@ -1,5 +1,8 @@
 """Based on 00_MMF_base_v15
-
+Integrated Component 11 Instructions into the base code
+Removed unnecessary valid yes no list in collate order function
+Adjusted the line lengths to meet PPE requirements
+Changed constant max tickets to 150
 """
 
 
